@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
+from recipes.models import (Ingredient, Recipe, RecipeIngredientMap,
+                            RecipeTagMap, Tag)
+from rest_framework import serializers
 
-from recipes.models import (
-    Tag, Recipe, Ingredient, RecipeIngredientMap, RecipeTagMap)
 from .utils import email_authentication
 
 User = get_user_model()

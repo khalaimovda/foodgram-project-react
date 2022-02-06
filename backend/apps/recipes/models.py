@@ -1,11 +1,10 @@
 import os
 
+from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.dispatch import receiver
-from django.contrib.auth.models import AnonymousUser
-from colorfield.fields import ColorField
-
 
 User = get_user_model()
 

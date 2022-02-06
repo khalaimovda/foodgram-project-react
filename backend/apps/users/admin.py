@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-
 from recipes.models import Recipe, UserFavouriteRecipeMap
 
 from .models import User

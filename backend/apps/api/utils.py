@@ -1,17 +1,16 @@
-import os
 import io
 import logging
+import os
 
-from django.db.models import Sum, QuerySet
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import BadRequest
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from django.db.models import QuerySet, Sum
+from recipes.models import Ingredient, Recipe, UserFavouriteRecipeMap
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont, TTFError
-
-from recipes.models import Ingredient, Recipe, UserFavouriteRecipeMap
+from reportlab.pdfbase.ttfonts import TTFError, TTFont
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from shopping_carts.models import ShoppingCart
 
 """In this module there are different functions which makes the business logic

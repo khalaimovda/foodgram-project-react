@@ -1,10 +1,8 @@
 from django.urls import path
 from rest_framework import routers
 
-from .views import (
-    UserViewSet, TokenLoginView, TokenLogoutView, TagViewSet, RecipeViewSet,
-    IngredientViewSet,
-)
+from .views import (IngredientViewSet, RecipeViewSet, TagViewSet,
+                    TokenLoginView, TokenLogoutView, UserViewSet)
 
 router = routers.DefaultRouter()
 

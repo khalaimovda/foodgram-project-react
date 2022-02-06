@@ -1,36 +1,31 @@
 import logging
 
-from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import BadRequest
-from rest_framework import viewsets, views, mixins, permissions, status
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.authtoken.models import Token
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg.utils import swagger_auto_schema, no_body
 from drf_yasg import openapi
-
-from recipes.models import Tag, Recipe, Ingredient
+from drf_yasg.utils import no_body, swagger_auto_schema
+from recipes.models import Ingredient, Recipe, Tag
+from rest_framework import mixins, permissions, status, views, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from shopping_carts.models import ShoppingCart
 
-from .serializers import (
-    UserGetSerializer, UserCreateSerializer, SetPasswordSerializer,
-    TagSerializer, IngredientSerializer, RecipeGetSerializer,
-    RecipeCreateUpdateRequestSerializer, RecipeBriefSerializer,
-    UserSubscriptionSerializer, TokenLoginRequestSerializer,
-    TokenLoginResponseSerializer
-)
-from .filters import (
-    RecipeFilter, RecipesLimitFilterBackend, IngredientNameSearchFilter
-)
+from .filters import (IngredientNameSearchFilter, RecipeFilter,
+                      RecipesLimitFilterBackend)
 from .permissions import ReadAllCreateAuthenticatedChangeAuthor
-from .utils import (
-    make_user_shopping_cart, add_recipe_to_shopping_cart,
-    remove_recipe_from_shopping_cart, add_recipe_to_favorites,
-    remove_recipe_from_favorites, subscribe, unsubscribe
-)
+from .serializers import (IngredientSerializer, RecipeBriefSerializer,
+                          RecipeCreateUpdateRequestSerializer,
+                          RecipeGetSerializer, SetPasswordSerializer,
+                          TagSerializer, TokenLoginRequestSerializer,
+                          TokenLoginResponseSerializer, UserCreateSerializer,
+                          UserGetSerializer, UserSubscriptionSerializer)
+from .utils import (add_recipe_to_favorites, add_recipe_to_shopping_cart,
+                    make_user_shopping_cart, remove_recipe_from_favorites,
+                    remove_recipe_from_shopping_cart, subscribe, unsubscribe)
 
 logger = logging.getLogger(__name__)
 

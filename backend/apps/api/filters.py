@@ -1,10 +1,8 @@
-from django_filters import rest_framework as filters
 from django.db.models import Q
-from rest_framework.filters import (
-    BaseFilterBackend, SearchFilter, coreapi, coreschema
-)
-
+from django_filters import rest_framework as filters
 from recipes.models import Recipe
+from rest_framework.filters import (BaseFilterBackend, SearchFilter, coreapi,
+                                    coreschema)
 
 
 class RecipeFilter(filters.FilterSet):
