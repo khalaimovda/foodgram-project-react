@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'shopping_carts.apps.ShoppingCartsConfig',
     'api.apps.ApiConfig',
-
 ]
 
 MIDDLEWARE = [
@@ -129,7 +128,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'formatter': 'standard',
-            'filename': os.path.join(LOGS_DIR,  'logs.log'),
+            'filename': os.path.join(LOGS_DIR, 'logs.log'),
         }
     },
     'loggers': {

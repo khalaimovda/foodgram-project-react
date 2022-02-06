@@ -58,8 +58,8 @@ class IngredientNameSearchFilter(SearchFilter):
             search_term_lower = search_term_upper = search_terms[0]
 
         queryset = queryset.filter(
-            Q(name__startswith=search_term_lower) |
-            Q(name__startswith=search_term_upper)
+            Q(name__startswith=search_term_lower)
+            | Q(name__startswith=search_term_upper)
         )
 
         return queryset

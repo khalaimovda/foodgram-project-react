@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
@@ -272,7 +272,7 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
         if recipes_limit is not None:
             try:
                 recipes_limit = int(recipes_limit)
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError):
                 raise serializers.ValidationError(
                     'Incorrect type of recipes_limit query parameter'
                 )

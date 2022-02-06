@@ -65,7 +65,7 @@ def make_shopping_cart_pdf_from_ingredients(
     try:
         font_path = os.path.join(settings.FONT_ROOT, 'DejaVuSerif.ttf')
         pdfmetrics.registerFont(TTFont('DejaVuSerif', font_path, 'UTF-8'))
-    except TTFError as e:
+    except TTFError:
         logger.error(msg='There is no cyrillic font for pdf constructor')
     else:
         styles['Normal'].fontName = 'DejaVuSerif'

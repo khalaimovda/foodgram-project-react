@@ -13,7 +13,7 @@ from drf_yasg.utils import swagger_auto_schema, no_body
 from drf_yasg import openapi
 
 from recipes.models import Tag, Recipe, Ingredient
-from shopping_carts.models import ShoppingCart, ShoppingCartRecipeMap
+from shopping_carts.models import ShoppingCart
 
 from .serializers import (
     UserGetSerializer, UserCreateSerializer, SetPasswordSerializer,
