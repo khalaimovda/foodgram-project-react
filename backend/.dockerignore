@@ -131,9 +131,5 @@ dmypy.json
 # .idea
 .idea
 
-# .vscode
-.vscode
-
 # static and media
 media
-# todo: Сюда нужно добавить статику и медиа
