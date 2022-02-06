@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # Check if postgres database is ready
-if [ "$DATABASE" = "postgres"]
+if [ "$DB_NAME" = "postgres"]
 then
   echo "Waiting for postgres ..."
 
-  while ! nc -z "$SQL_HOST" "$SQL_PORT"; do
+  while ! nc -z "$DB_HOST" "$DB_PORT"; do
     sleep 0.1
   done
 
@@ -18,8 +18,5 @@ python manage.py collectstatic --noinput
 
 echo "Apply database migrations"
 python manage.py migrate
-
- echo "Filling database"
- python manage.py loaddata db.json
 
 exec "$@"

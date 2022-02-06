@@ -7,9 +7,7 @@ services:
     env_file:
       - ./.env
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: khalaimovda/foodgram_backend:v1.0
     restart: always
     command: gunicorn api_foodgram.wsgi:application --bind 0:8000
     volumes:
@@ -21,9 +19,7 @@ services:
     env_file:
       - ./.env
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: khalaimovda/foodgram_frontend:v1.0
     volumes:
       - ../frontend/:/app/result_build/
   nginx:

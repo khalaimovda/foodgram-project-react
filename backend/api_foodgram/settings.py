@@ -21,9 +21,13 @@ sys.path.insert(0, APPS_DIR)
 SECRET_KEY = os.getenv('SECRET_KEY', 'some_secret_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '51.250.17.88',
+]
 
 
 # Application definition
@@ -199,4 +203,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
 
-CSRF_TRUSTED_ORIGINS = ['https://127.0.0.1', 'http://127.0.0.1']
+CSRF_TRUSTED_ORIGINS = [
+    'https://127.0.0.1',
+    'http://127.0.0.1',
+    'http://51.250.17.88',
+    'https://51.250.17.88'
+]
