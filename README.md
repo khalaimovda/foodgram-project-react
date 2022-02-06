@@ -1,9 +1,7 @@
 # FoodGram
 (Проект развернут на 51.250.17.88)
 
-[![Django-app workflow](https://github.com/khalaimovda/foodgram-project-react
-/actions/workflows/main.yml/badge.svg)](https://github.com/khalaimovda/foodgram-project-react
-/actions/workflows/main.yml)
+[![Django-app workflow](https://github.com/khalaimovda/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/khalaimovda/foodgram-project-react/actions/workflows/main.yml)
 
 ### Описание 
 
