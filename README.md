@@ -1,5 +1,6 @@
 # FoodGram
 (Проект развернут на 51.250.17.88)
+(Аккаунт администратора: username: admin, email: admin@admin.com, password: admin)
 
 [![Django-app workflow](https://github.com/khalaimovda/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/khalaimovda/foodgram-project-react/actions/workflows/main.yml)
 
