@@ -19,7 +19,10 @@ class RecipeFilter(filters.FilterSet):
         return queryset.filter(shopping_carts__owner=self.request.user)
 
     def tags_filter(self, queryset, name, value):
-        return queryset.filter(tags__slug=value)
+        tags = self.request.query_params.getlist('tags')
+        for tag in tags:
+            queryset = queryset.filter(tags__slug=tag)
+        return queryset
 
     class Meta:
         model = Recipe
