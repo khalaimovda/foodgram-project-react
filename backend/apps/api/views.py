@@ -23,7 +23,9 @@ from .serializers import (IngredientSerializer, RecipeBriefSerializer,
                           RecipeGetSerializer, SetPasswordSerializer,
                           TagSerializer, TokenLoginRequestSerializer,
                           TokenLoginResponseSerializer, UserCreateSerializer,
-                          UserGetSerializer, UserSubscriptionSerializer)
+                          UserGetSerializer, UserSubscriptionSerializer,
+                          RecipeResponseSerializer,
+                          )
 from .utils import (add_recipe_to_favorites, add_recipe_to_shopping_cart,
                     make_user_shopping_cart, remove_recipe_from_favorites,
                     remove_recipe_from_shopping_cart, subscribe, unsubscribe)
@@ -241,7 +243,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         request_serializer.is_valid(raise_exception=True)
         request_serializer.save(author=request.user)
 
-        response_serializer = RecipeGetSerializer(
+        response_serializer = RecipeResponseSerializer(
             instance=request_serializer.instance,
             context={'request': request},
         )
@@ -341,7 +343,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         request_serializer.is_valid(raise_exception=True)
         request_serializer.save(author=request.user)
 
-        response_serializer = RecipeGetSerializer(
+        response_serializer = RecipeResponseSerializer(
             instance=request_serializer.instance,
             context={'request': request},
         )

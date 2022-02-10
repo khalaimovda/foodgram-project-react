@@ -13,7 +13,7 @@ class RecipeFilter(filters.FilterSet):
     tags = filters.CharFilter(method='tags_filter')
 
     def is_favorited_filter(self, queryset, name, value):
-        return queryset.filter(followers__user=self.request.user)
+        return queryset.filter(followers=self.request.user)
 
     def is_in_shopping_cart_filter(self, queryset, name, value):
         return queryset.filter(shopping_carts__owner=self.request.user)

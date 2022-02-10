@@ -231,6 +231,26 @@ class RecipeCreateUpdateRequestSerializer(serializers.ModelSerializer):
         return recipe
 
 
+class RecipeResponseSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.all())
+    ingredients = serializers.SerializerMethodField(
+        method_name='get_ingredients')
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id', 'tags', 'author', 'ingredients', 'name', 'image', 'text',
+            'cooking_time',
+        )
+
+    def get_ingredients(self, obj) -> List[Dict]:
+        ingredients = obj.ingredients.all()
+        serializer = RecipeIngredientSerializer(
+            instance=ingredients, many=True, context={'recipe': obj})
+        return serializer.data
+
+
 class UserSubscriptionSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField(
         method_name='get_is_subscribed')
