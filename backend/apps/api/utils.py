@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import BadRequest
 from django.db.models import QuerySet, Sum
 from recipes.models import Ingredient, Recipe
@@ -145,3 +146,10 @@ def unsubscribe(following: User, follower: User) -> None:
     if not follower.followings.filter(pk=following.pk).exists():
         raise BadRequest('There is no this user in followings')
     follower.followings.remove(following)
+
+
+def get_is_subscribed(following: User, follower: User) -> bool:
+    """Returns True if User2 (follower) is following User1 (following)."""
+    if isinstance(follower, AnonymousUser):
+        return False
+    return follower.followings.filter(pk=following.pk).exists()

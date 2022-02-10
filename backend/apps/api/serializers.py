@@ -6,7 +6,7 @@ from drf_extra_fields.fields import Base64ImageField
 from recipes.models import Ingredient, Recipe, RecipeIngredientMap, Tag
 from rest_framework import serializers
 
-from .utils import email_authentication
+from .utils import email_authentication, get_is_subscribed
 
 User = get_user_model()
 
@@ -49,7 +49,8 @@ class TokenLoginResponseSerializer(serializers.Serializer):
 
 
 class UserGetSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.BooleanField()
+    is_subscribed = serializers.SerializerMethodField(
+        method_name='get_is_subscribed')
 
     class Meta:
         model = User
@@ -57,6 +58,10 @@ class UserGetSerializer(serializers.ModelSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed',
         )
+
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        return get_is_subscribed(following=obj, follower=user)
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -227,7 +232,8 @@ class RecipeCreateUpdateRequestSerializer(serializers.ModelSerializer):
 
 
 class UserSubscriptionSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.BooleanField()
+    is_subscribed = serializers.SerializerMethodField(
+        method_name='get_is_subscribed')
     recipes = serializers.SerializerMethodField(method_name='get_recipes')
     recipes_count = serializers.SerializerMethodField(
         method_name='get_recipes_count')
@@ -238,6 +244,10 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'recipes', 'recipes_count',
         )
+
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        return get_is_subscribed(following=obj, follower=user)
 
     def get_recipes(self, obj) -> RecipeBriefSerializer.data:
         recipes = obj.recipes.all()

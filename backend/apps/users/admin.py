@@ -15,6 +15,8 @@ class FollowInline(admin.TabularInline):
 
 class RecipeInline(admin.TabularInline):
     model = Recipe
+    fields = ('name', 'image', 'text',)
+    readonly_fields = ('name', 'image', 'text', )
     extra = 0
     verbose_name = 'Recipe'
     verbose_name_plural = 'Recipes'

@@ -65,20 +65,6 @@ class UserViewSet(
     queryset = User.objects.all()
     serializer_class = UserGetSerializer
 
-    def get_queryset(self):
-        user = self.request.user
-        queryset = User.objects.prefetch_related(
-            'followers'
-        ).annotate(
-            is_subscribed=Case(
-                When(followers=user, then=True),
-                default=False,
-                output_field=BooleanField()
-            )
-        ).all()
-
-        return queryset
-
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
