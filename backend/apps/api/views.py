@@ -20,12 +20,11 @@ from .filters import (IngredientNameSearchFilter, RecipeFilter,
 from .permissions import ReadAllCreateAuthenticatedChangeAuthor
 from .serializers import (IngredientSerializer, RecipeBriefSerializer,
                           RecipeCreateUpdateRequestSerializer,
-                          RecipeGetSerializer, SetPasswordSerializer,
-                          TagSerializer, TokenLoginRequestSerializer,
+                          RecipeGetSerializer, RecipeResponseSerializer,
+                          SetPasswordSerializer, TagSerializer,
+                          TokenLoginRequestSerializer,
                           TokenLoginResponseSerializer, UserCreateSerializer,
-                          UserGetSerializer, UserSubscriptionSerializer,
-                          RecipeResponseSerializer,
-                          )
+                          UserGetSerializer, UserSubscriptionSerializer)
 from .utils import (add_recipe_to_favorites, add_recipe_to_shopping_cart,
                     make_user_shopping_cart, remove_recipe_from_favorites,
                     remove_recipe_from_shopping_cart, subscribe, unsubscribe)
