@@ -18,6 +18,8 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', )
     inlines = [IngredientInline, TagInline]
     list_filter = ('name', 'author__username', 'tags')
+    fields = (
+        'name', 'image', 'text', 'author', 'cooking_time', 'followers_count')
     readonly_fields = ('followers_count', )
 
     def followers_count(self, obj):

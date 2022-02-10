@@ -1,8 +1,9 @@
+from typing import Dict, List
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import (Ingredient, Recipe, RecipeIngredientMap,
-                            RecipeTagMap, Tag)
+from recipes.models import Ingredient, Recipe, RecipeIngredientMap, Tag
 from rest_framework import serializers
 
 from .utils import email_authentication
@@ -48,12 +49,7 @@ class TokenLoginResponseSerializer(serializers.Serializer):
 
 
 class UserGetSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField(
-        method_name='get_is_subscribed')
-
-    def get_is_subscribed(self, obj) -> bool:
-        user = self.context['request'].user
-        return obj.get_is_subscribed(user=user)
+    is_subscribed = serializers.BooleanField()
 
     class Meta:
         model = User
@@ -116,15 +112,15 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     amount = serializers.SerializerMethodField(method_name='get_amount')
     measurement_unit = serializers.CharField(source='measurement_unit.name')
 
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
     def get_amount(self, obj):
         recipe = self.context['recipe']
         amount = recipe.ingredients.through.objects.get(
             recipe=recipe, ingredient=obj).amount
         return amount
-
-    class Meta:
-        model = Ingredient
-        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class RecipeBriefSerializer(serializers.ModelSerializer):
@@ -139,25 +135,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     author = UserGetSerializer()
     ingredients = serializers.SerializerMethodField(
         method_name='get_ingredients')
-    is_favorited = serializers.SerializerMethodField(
-        method_name='get_is_favorited')
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        method_name='get_is_in_shopping_cart'
-    )
-
-    def get_ingredients(self, obj) -> RecipeIngredientSerializer.data:
-        ingredients = obj.ingredients.all()
-        serializer = RecipeIngredientSerializer(
-            instance=ingredients, many=True, context={'recipe': obj})
-        return serializer.data
-
-    def get_is_favorited(self, obj) -> bool:
-        user = self.context['request'].user
-        return obj.get_is_favorite(user=user)
-
-    def get_is_in_shopping_cart(self, obj) -> bool:
-        user = self.context['request'].user
-        return obj.get_is_in_shopping_cart(user=user)
+    is_favorited = serializers.BooleanField()
+    is_in_shopping_cart = serializers.BooleanField()
 
     class Meta:
         model = Recipe
@@ -165,6 +144,12 @@ class RecipeGetSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time',
         )
+
+    def get_ingredients(self, obj) -> List[Dict]:
+        ingredients = obj.ingredients.all()
+        serializer = RecipeIngredientSerializer(
+            instance=ingredients, many=True, context={'recipe': obj})
+        return serializer.data
 
 
 class RecipeIngredientMapSerializer(serializers.ModelSerializer):
@@ -211,24 +196,17 @@ class RecipeCreateUpdateRequestSerializer(serializers.ModelSerializer):
             )
 
         tag_data = validated_data.pop('tag_maps')
-        RecipeTagMap.objects.filter(recipe=instance).delete()
-        tag_data_distinct = set(tag_data)
-        for tag in tag_data_distinct:
-            RecipeTagMap.objects.create(
-                recipe=instance,
-                tag=tag,
-            )
+        instance.tags.clear()
+        instance.tags.add(*tag_data)
 
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        super().update(instance=instance, validated_data=validated_data)
 
         return instance
 
     def create(self, validated_data):
         ingredient_data = validated_data.pop('ingredient_maps')
         tag_data = validated_data.pop('tag_maps')
-        recipe = Recipe.objects.create(**validated_data)
+        recipe = super().create(validated_data=validated_data)
 
         ingredient_data_distinct = {}
         for item in ingredient_data:
@@ -244,26 +222,22 @@ class RecipeCreateUpdateRequestSerializer(serializers.ModelSerializer):
                 ingredient=ingredient,
                 amount=amount,
             )
-
-        tag_data_distinct = set(tag_data)
-        for tag in tag_data_distinct:
-            RecipeTagMap.objects.create(
-                recipe=recipe,
-                tag=tag,
-            )
+        recipe.tags.add(*tag_data)
         return recipe
 
 
 class UserSubscriptionSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField(
-        method_name='get_is_subscribed')
+    is_subscribed = serializers.BooleanField()
     recipes = serializers.SerializerMethodField(method_name='get_recipes')
     recipes_count = serializers.SerializerMethodField(
         method_name='get_recipes_count')
 
-    def get_is_subscribed(self, obj) -> bool:
-        user = self.context['request'].user
-        return obj.get_is_subscribed(user=user)
+    class Meta:
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count',
+        )
 
     def get_recipes(self, obj) -> RecipeBriefSerializer.data:
         recipes = obj.recipes.all()
@@ -283,10 +257,3 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj) -> int:
         return obj.recipes.count()
-
-    class Meta:
-        model = User
-        fields = (
-            'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count',
-        )

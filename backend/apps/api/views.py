@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import BadRequest
+from django.db.models import BooleanField, Case, When
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -63,6 +64,20 @@ class UserViewSet(
 ):
     queryset = User.objects.all()
     serializer_class = UserGetSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = User.objects.prefetch_related(
+            'followers'
+        ).annotate(
+            is_subscribed=Case(
+                When(followers=user, then=True),
+                default=False,
+                output_field=BooleanField()
+            )
+        ).all()
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -140,24 +155,31 @@ class UserViewSet(
         ]
     )
     @action(
-        methods=['POST', 'DELETE'], detail=True,
+        methods=['POST'], detail=True,
         filter_backends=[RecipesLimitFilterBackend],
         pagination_class=None,
     )
     def subscribe(self, request, pk):
         following = get_object_or_404(klass=User, pk=pk)
         try:
-            if request.method == 'POST':
-                subscribe(following=following, follower=request.user)
-                serializer = self.get_serializer(
-                    instance=following, context={'request': request}, )
-                return Response(
-                    data=serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-            if request.method == 'DELETE':
-                unsubscribe(following=following, follower=request.user)
-                return Response(status=status.HTTP_204_NO_CONTENT)
+            subscribe(following=following, follower=request.user)
+            serializer = self.get_serializer(
+                instance=following, context={'request': request}, )
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        except BadRequest as e:
+            logger.warning(msg=str(e))
+            return Response(
+                data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, pk):
+        following = get_object_or_404(klass=User, pk=pk)
+        try:
+            unsubscribe(following=following, follower=request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except BadRequest as e:
             logger.warning(msg=str(e))
             return Response(
@@ -188,19 +210,33 @@ class IngredientViewSet(
     filterset_fields = ['category', ]
 
 
-class RecipeViewSet(
-    viewsets.GenericViewSet,
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-):
-    queryset = Recipe.objects.all()
+class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [ReadAllCreateAuthenticatedChangeAuthor]
-
-    filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Recipe.objects.prefetch_related(
+            'ingredients'
+        ).prefetch_related(
+            'tags'
+        ).prefetch_related(
+            'author'
+        ).annotate(
+            is_favorited=Case(
+                When(followers=user, then=True),
+                default=False,
+                output_field=BooleanField()
+            )
+        ).annotate(
+            is_in_shopping_cart=Case(
+                When(shopping_carts__owner=user, then=True),
+                default=False,
+                output_field=BooleanField()
+            )
+        ).all()
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -208,7 +244,13 @@ class RecipeViewSet(
         if self.action in ('create', 'update', 'partial_update'):
             return RecipeCreateUpdateRequestSerializer
 
-    def create(self, request):  # noqa
+    def filter_queryset(self, queryset):
+        filter_backends = (DjangoFilterBackend,)
+        for backend in list(filter_backends):
+            queryset = backend().filter_queryset(self.request, queryset, self)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
         request_serializer = self.get_serializer(data=request.data)
         request_serializer.is_valid(raise_exception=True)
         request_serializer.save(author=request.user)
@@ -221,36 +263,12 @@ class RecipeViewSet(
             data=response_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk):  # noqa
-        instance = get_object_or_404(klass=Recipe, pk=pk)
-        self.check_object_permissions(request=request, obj=instance)
-
-        request_serializer = self.get_serializer(
-            data=request.data, instance=instance)
-        request_serializer.is_valid(raise_exception=True)
-        request_serializer.save(author=request.user)
-
-        response_serializer = RecipeGetSerializer(
-            instance=request_serializer.instance,
-            context={'request': request},
-        )
-        return Response(
-            data=response_serializer.data, status=status.HTTP_200_OK)
+        data = self._update_recipe(request=request, pk=pk)
+        return Response(data=data, status=status.HTTP_200_OK)
 
     def partial_update(self, request, pk):  # noqa
-        instance = get_object_or_404(klass=Recipe, pk=pk)
-        self.check_object_permissions(request=request, obj=instance)
-
-        request_serializer = self.get_serializer(
-            data=request.data, instance=instance)
-        request_serializer.is_valid(raise_exception=True)
-        request_serializer.save(author=request.user)
-
-        response_serializer = RecipeGetSerializer(
-            instance=request_serializer.instance,
-            context={'request': request},
-        )
-        return Response(
-            data=response_serializer.data, status=status.HTTP_200_OK)
+        data = self._update_recipe(request=request, pk=pk)
+        return Response(data=data, status=status.HTTP_200_OK)
 
     @action(
         methods=['GET'], detail=False, filter_backends=None,
@@ -264,50 +282,81 @@ class RecipeViewSet(
         return response
 
     @action(
-        methods=['POST', 'DELETE'], detail=True, filter_backends=None,
+        methods=['POST', ], detail=True, filter_backends=None,
         pagination_class=None, permission_classes=[permissions.IsAuthenticated]
     )
     def shopping_cart(self, request, pk):
-        recipe = get_object_or_404(klass=Recipe, pk=pk)
+        recipe = self.get_object()
         shopping_cart = ShoppingCart.objects.get_or_create(
             owner=request.user)[0]
-
         try:
-            if request.method == 'POST':
-                add_recipe_to_shopping_cart(
-                    recipe=recipe, shopping_cart=shopping_cart)
-                serializer = RecipeBriefSerializer(instance=recipe)
-                return Response(
-                    data=serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-            if request.method == 'DELETE':
-                remove_recipe_from_shopping_cart(
-                    recipe=recipe, shopping_cart=shopping_cart)
-                return Response(status=status.HTTP_204_NO_CONTENT)
+            add_recipe_to_shopping_cart(
+                recipe=recipe, shopping_cart=shopping_cart)
+            serializer = RecipeBriefSerializer(instance=recipe)
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        except BadRequest as e:
+            logger.warning(msg=str(e))
+            return Response(
+                data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @shopping_cart.mapping.delete
+    def remove_from_shopping_cart(self, request, pk):
+        recipe = self.get_object()
+        shopping_cart = ShoppingCart.objects.get_or_create(
+            owner=request.user)[0]
+        try:
+            remove_recipe_from_shopping_cart(
+                recipe=recipe, shopping_cart=shopping_cart)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except BadRequest as e:
             logger.warning(msg=str(e))
             return Response(
                 data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
-        methods=['POST', 'DELETE'], detail=True, filter_backends=None,
+        methods=['POST'], detail=True, filter_backends=None,
         pagination_class=None, permission_classes=[permissions.IsAuthenticated]
     )
     def favorite(self, request, pk):
-        recipe = get_object_or_404(klass=Recipe, pk=pk)
+        recipe = self.get_object()
         try:
-            if request.method == 'POST':
-                add_recipe_to_favorites(recipe=recipe, user=request.user)
-                serializer = RecipeBriefSerializer(instance=recipe)
-                return Response(
-                    data=serializer.data,
-                    status=status.HTTP_201_CREATED
-                )
-            if request.method == 'DELETE':
-                remove_recipe_from_favorites(recipe=recipe, user=request.user)
-                return Response(status=status.HTTP_204_NO_CONTENT)
+            add_recipe_to_favorites(recipe=recipe, user=request.user)
+            serializer = RecipeBriefSerializer(instance=recipe)
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_201_CREATED
+            )
         except BadRequest as e:
             logger.warning(msg=str(e))
             return Response(
                 data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @favorite.mapping.delete
+    def remove_from_favorite(self, request, pk):
+        recipe = self.get_object()
+        try:
+            remove_recipe_from_favorites(recipe=recipe, user=request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except BadRequest as e:
+            logger.warning(msg=str(e))
+            return Response(
+                data={'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def _update_recipe(self, request, pk):
+        """Updates Recipe model using request and pk."""
+        instance = self.get_object()
+        self.check_object_permissions(request=request, obj=instance)
+
+        request_serializer = self.get_serializer(
+            data=request.data, instance=instance)
+        request_serializer.is_valid(raise_exception=True)
+        request_serializer.save(author=request.user)
+
+        response_serializer = RecipeGetSerializer(
+            instance=request_serializer.instance,
+            context={'request': request},
+        )
+        return response_serializer.data

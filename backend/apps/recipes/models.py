@@ -2,7 +2,6 @@ import os
 
 from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.dispatch import receiver
 
@@ -27,7 +26,6 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         verbose_name='Tags',
         to='Tag',
-        through='RecipeTagMap',
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Cooking time in minutes'
@@ -36,29 +34,19 @@ class Recipe(models.Model):
         verbose_name='Publication date',
         auto_now_add=True,
     )
-
-    def get_is_favorite(self, user) -> bool:
-        if isinstance(user, AnonymousUser):
-            return False
-        return user.favourite_recipes.filter(recipe=self).exists()
-
-    def get_is_in_shopping_cart(self, user) -> bool:
-        if isinstance(user, AnonymousUser):
-            return False
-
-        shopping_cart = user.shopping_cart.first()
-        if not shopping_cart:
-            return False
-
-        return shopping_cart.recipes.filter(pk=self.pk).exists()
-
-    def __str__(self):
-        return self.name
+    followers = models.ManyToManyField(
+        verbose_name='Followers',
+        to=User,
+        related_name='favourite_recipes'
+    )
 
     class Meta:
         verbose_name = 'Recipe'
         verbose_name_plural = 'Recipes'
         ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.name
 
 
 @receiver(models.signals.post_delete, sender=Recipe)
@@ -136,9 +124,6 @@ class RecipeIngredientMap(models.Model):
     )
     amount = models.PositiveIntegerField(verbose_name='Amount')
 
-    def __str__(self):
-        return self.recipe.name + ' -- ' + self.ingredient.name
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -147,50 +132,5 @@ class RecipeIngredientMap(models.Model):
             )
         ]
 
-
-class RecipeTagMap(models.Model):
-    recipe = models.ForeignKey(
-        verbose_name='Recipe',
-        to=Recipe,
-        on_delete=models.CASCADE,
-        related_name='tag_maps',
-    )
-    tag = models.ForeignKey(
-        verbose_name='Tag',
-        to=Tag,
-        on_delete=models.CASCADE,
-    )
-
     def __str__(self):
-        return self.recipe.name + ' -- ' + self.tag.name
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=('recipe', 'tag'),
-                name='recipe_tag_map_unique'
-            )
-        ]
-
-
-class UserFavouriteRecipeMap(models.Model):
-    user = models.ForeignKey(
-        verbose_name='User',
-        to=User,
-        related_name='favourite_recipes',
-        on_delete=models.CASCADE,
-    )
-    recipe = models.ForeignKey(
-        verbose_name='Recipe',
-        to=Recipe,
-        related_name='followers',
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=('user', 'recipe'),
-                name='user_favourite_recipe_map_unique'
-            )
-        ]
+        return self.recipe.name + ' -- ' + self.ingredient.name

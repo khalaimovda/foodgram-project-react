@@ -1,13 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from recipes.models import Recipe, UserFavouriteRecipeMap
+from recipes.models import Recipe
 
 from .models import User
 
 
 class FollowInline(admin.TabularInline):
     model = User.followings.through
-    fk_name = 'follower'
+    fk_name = 'from_user'
     extra = 0
     verbose_name = 'Following'
     verbose_name_plural = 'Followings'
@@ -21,7 +21,7 @@ class RecipeInline(admin.TabularInline):
 
 
 class FavouriteRecipeInline(admin.TabularInline):
-    model = UserFavouriteRecipeMap
+    model = User.favourite_recipes.through
     extra = 0
     verbose_name = 'Favorite recipe'
     verbose_name_plural = 'Favourite recipes'

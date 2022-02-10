@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import BadRequest
 from django.db.models import QuerySet, Sum
-from recipes.models import Ingredient, Recipe, UserFavouriteRecipeMap
+from recipes.models import Ingredient, Recipe
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFError, TTFont
@@ -31,7 +31,6 @@ def email_authentication(email=None, password=None):
     else:
         if user.check_password(password):
             return user
-    return None
 
 
 def make_user_shopping_cart(user: User) -> bytes:
@@ -116,21 +115,17 @@ def remove_recipe_from_shopping_cart(
 def add_recipe_to_favorites(recipe: Recipe, user: User) -> None:
     """Adds recipe to user favorites. Raise BadRequest exception
     if this recipe has already exists in user favorites."""
-    if UserFavouriteRecipeMap.objects.filter(
-        user=user, recipe=recipe
-    ).exists():
+    if user.favourite_recipes.filter(pk=recipe.pk).exists():
         raise BadRequest('This recipe has already in user favorites')
-    UserFavouriteRecipeMap.objects.create(user=user, recipe=recipe)
+    user.favourite_recipes.add(recipe)
 
 
 def remove_recipe_from_favorites(recipe: Recipe, user: User) -> None:
     """Removes recipe from user favorites. Raise BadRequest exception
     if there is no this recipe in user favorites."""
-    if not UserFavouriteRecipeMap.objects.filter(
-            user=user, recipe=recipe
-    ).exists():
+    if not user.favourite_recipes.filter(pk=recipe.pk).exists():
         raise BadRequest('There is no this recipe in user favorites')
-    UserFavouriteRecipeMap.objects.filter(user=user, recipe=recipe).delete()
+    user.favourite_recipes.remove(recipe)
 
 
 def subscribe(following: User, follower: User) -> None:

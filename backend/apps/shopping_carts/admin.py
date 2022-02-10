@@ -10,4 +10,5 @@ class RecipeInline(admin.TabularInline):
 
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
+    fields = ('owner', )
     inlines = [RecipeInline]
