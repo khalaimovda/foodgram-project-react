@@ -209,19 +209,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'tags'
         ).prefetch_related(
             'author'
-        ).annotate(
-            is_favorited=Case(
-                When(followers=user, then=True),
-                default=False,
-                output_field=BooleanField()
-            )
-        ).annotate(
-            is_in_shopping_cart=Case(
-                When(shopping_carts__owner=user, then=True),
-                default=False,
-                output_field=BooleanField()
-            )
-        ).all()
+        )
+        if not user.is_anonymous:
+            queryset = queryset.annotate(
+                is_favorited=Case(
+                    When(followers=user, then=True),
+                    default=False,
+                    output_field=BooleanField()
+                )
+            ).annotate(
+                is_in_shopping_cart=Case(
+                    When(shopping_carts__owner=user, then=True),
+                    default=False,
+                    output_field=BooleanField()
+                )
+            ).all()
+        else:
+            queryset = queryset.annotate(
+                is_favorited=Case(
+                    default=False,
+                    output_field=BooleanField()
+                )
+            ).annotate(
+                is_in_shopping_cart=Case(
+                    default=False,
+                    output_field=BooleanField()
+                )
+            ).all()
 
         return queryset
 
