@@ -2,7 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import BadRequest
-from django.db.models import IntegerField, BooleanField, Case, When, Sum
+from django.db.models import BooleanField, Case, IntegerField, Sum, When
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
