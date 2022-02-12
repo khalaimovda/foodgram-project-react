@@ -2,7 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import BadRequest
-from django.db.models import BooleanField, Case, When
+from django.db.models import IntegerField, BooleanField, Case, When, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -212,18 +212,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         if not user.is_anonymous:
             queryset = queryset.annotate(
+                is_favorited_int=Sum(Case(
+                    When(followers=user, then=1),
+                    default=0,
+                    output_field=IntegerField()
+                ))
+            ).annotate(
                 is_favorited=Case(
-                    When(followers=user, then=True),
+                    When(is_favorited_int__gt=0, then=True),
                     default=False,
                     output_field=BooleanField()
                 )
             ).annotate(
+                is_in_shopping_cart_int=Sum(
+                    Case(
+                        When(shopping_carts__owner=user, then=1),
+                        default=0,
+                        output_field=IntegerField()
+                    )
+                ),
+            ).annotate(
                 is_in_shopping_cart=Case(
-                    When(shopping_carts__owner=user, then=True),
+                    When(is_in_shopping_cart_int__gt=0, then=True),
                     default=False,
                     output_field=BooleanField()
                 )
-            ).all()
+            )
         else:
             queryset = queryset.annotate(
                 is_favorited=Case(
@@ -235,7 +249,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     default=False,
                     output_field=BooleanField()
                 )
-            ).all()
+            )
 
         return queryset
 
